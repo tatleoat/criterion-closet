@@ -21,4 +21,4 @@ src/public/assets/spines/
 # Film source data directories (1700+) — not part of the app
 /*/
 !/src/
-!/metadata.json
+!/metadata.jsonsrccompressed.zip
