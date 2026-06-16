@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Criterion Closet Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'VCR OSD Mono';
+      src: url('/fonts/VCR_OSD_MONO_1.001.ttf') format('truetype');
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+    canvas { display: block; image-rendering: pixelated; }
+    #crosshair { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 24px; pointer-events: none; opacity: 0.7; }
+    #info { position: fixed; top: 10px; left: 10px; color: #fff; font-size: 12px; opacity: 0.5; }
+    #caption { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: #000; color: #fff; padding: 10px 20px 12px; font-family: 'VCR OSD Mono', 'VT323', 'Courier New', monospace; font-size: 20px; text-align: center; letter-spacing: 2px; z-index: 5; text-transform: uppercase; border: none; }
+    #panel { display: none; position: fixed; top: 0; right: 0; width: 380px; height: 100vh; background: rgba(10,10,10,0.95); color: #fff; padding: 20px; overflow-y: auto; font-family: 'Helvetica Neue', Arial, sans-serif; z-index: 10; }
+    #panel img { width: 100%; image-rendering: pixelated; margin-bottom: 10px; }
+    #panel-canvas { width: 100%; aspect-ratio: 1/1.4; image-rendering: pixelated; margin-bottom: 10px; border-radius: 4px; }
+    #panel .meta { font-size: 13px; line-height: 1.6; }
+    #panel .meta strong { color: #aaa; display: inline-block; width: 70px; }
+    #panel .close { position: absolute; top: 10px; right: 15px; cursor: pointer; font-size: 24px; color: #fff; }
+    #panel .trailers { margin-top: 15px; }
+    #panel .trailers button { width: 100%; padding: 8px; background: #222; color: #fff; border: 1px solid #444; cursor: pointer; margin-bottom: 8px; text-align: left; font-size: 12px; }
+    #panel .trailers button:hover { background: #333; }
+  </style>
+  <script>
+    // Preload: count mousemove listener attachments
+    window.__mouseMoveCount = 0;
+    const _origAE = EventTarget.prototype.addEventListener;
+    EventTarget.prototype.addEventListener = function(type, fn, opts) {
+      if (type === 'mousemove' && (this === document || this === document.body || this === document.documentElement)) {
+        window.__mouseMoveCount++;
+        console.log('[DEBUG] mousemove listener #' + window.__mouseMoveCount + ' attached to', this.tagName || this.nodeName || '?');
+      }
+      return _origAE.call(this, type, fn, opts);
+    };
+  </script>
+</head>
+<body>
+  <div id="crosshair">+</div>
+  <div id="info">Click to enter closet · WASD move · Mouse look</div>
+  <div id="caption"></div>
+  <div id="panel">
+    <span class="close" onclick="closePanel()">×</span>
+    <canvas id="panel-canvas"></canvas>
+    <div class="meta" id="panel-meta"></div>
+    <div class="trailers" id="panel-trailers">
+      <button onclick="searchTrailers()">🔍 Search YouTube Trailers</button>
+      <div id="panel-trailer-results"></div>
+    </div>
+  </div>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

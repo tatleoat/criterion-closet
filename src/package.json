@@ -1,0 +1,18 @@
+{
+  "name": "criterion-closet-simulator",
+  "version": "1.0.0",
+  "description": "A walkable 3D recreation of the Criterion Closet with ~1,700 films on shelves",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["threejs", "criterion", "psx", "3d", "interactive"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.184.0",
+    "vite": "^6.0.0"
+  }
+}

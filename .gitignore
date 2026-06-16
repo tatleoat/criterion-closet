@@ -1,0 +1,24 @@
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# Precomputed assets — regenerate with preprocess/*.py
+# (carpet.jpg and light_diffuser.webp are kept — they're procedural/placeholder textures)
+src/public/assets/atlas_*.png
+src/public/assets/atlas_manifest.json
+src/public/assets/films.json
+src/public/assets/spine_manifest.json
+
+# Cover & spine images — too large to track in git
+src/public/assets/covers/
+src/public/assets/spines/
+
+# Film source data directories (1700+) — not part of the app
+/*/
+!/src/
+!/metadata.json
