@@ -89,16 +89,16 @@ export function buildCloset() {
 
   // ─── ROOM WALLS ────────────────────────────
   // Solid walls behind the bookcases so you can't see past them
-  const wallMat = new THREE.MeshBasicMaterial({ color: 0x080808, side: THREE.DoubleSide });
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.9, side: THREE.DoubleSide });
   const wallH = CASE_H + 0.2;
-  // Left wall — behind left cases (cases at X=-1.40)
-  const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(12, wallH), wallMat);
-  leftWall.position.set(-1.70, wallH / 2, -0.375);
+  // Left wall — behind left cases (cases at X=-1.40), extends to cover new front wall
+  const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(26, wallH), wallMat);
+  leftWall.position.set(-1.70, wallH / 2, 3.0);
   leftWall.rotation.y = Math.PI / 2;
   group.add(leftWall);
   // Right wall — behind right cases (cases at X=3.30)
-  const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(12, wallH), wallMat);
-  rightWall.position.set(3.60, wallH / 2, -0.375);
+  const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(26, wallH), wallMat);
+  rightWall.position.set(3.60, wallH / 2, 3.0);
   rightWall.rotation.y = -Math.PI / 2;
   group.add(rightWall);
   // Back wall — behind back cases (cases at Z=4.35)
@@ -106,6 +106,11 @@ export function buildCloset() {
   backWall.position.set(0.95, wallH / 2, 4.60);
   backWall.rotation.y = 0;
   group.add(backWall);
+  // Front wall — encloses the entrance side (most -Z)
+  const frontWall = new THREE.Mesh(new THREE.PlaneGeometry(6, wallH), wallMat);
+  frontWall.position.set(0.95, wallH / 2, -10.00);
+  frontWall.rotation.y = 0;
+  group.add(frontWall);
 
   return { closetGroup: group, bounds };
 }
@@ -118,7 +123,7 @@ export function buildCeiling() {
   const TILE_SIZE = 2.1;
   const CEIL_Y = 2.7;
   const numCols = 4;
-  const numRows = 5;
+  const numRows = 11; // 23.1m deep — covers from Z≈-10.55 to Z≈+12.55
 
   // Center the grid over the room, then offset by +1 in X and +1 in Z
   const totalW = numCols * TILE_SIZE;

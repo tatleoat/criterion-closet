@@ -22,6 +22,126 @@ export async function loadAtlases() {
   }
 }
 
+// ─── Color cache for films (computed from atlas) ─────────
+let filmColorsCache = null;
+const ATLAS_SIZE = 2048;
+const TILE_SIZE = 128;
+
+/**
+ * For each film that has an atlasRef, compute the average color of its cover
+ * in OKLCH hue order (red→orange→yellow→green→cyan→blue→purple→magenta→red),
+ * with black/white/grey sorted by luminance at the end.
+ * Returns: { filmId -> { hue, saturation, lightness, hex } }
+ */
+export async function computeFilmColors(films) {
+  if (filmColorsCache) return filmColorsCache;
+
+  const colorData = {};
+  const needsCompute = films.filter(f => f.atlasRef);
+  if (needsCompute.length === 0) return colorData;
+
+  // Load atlas sheets as ImageElements (for canvas extraction)
+  const sheetImages = [];
+  for (let i = 0; i < 4; i++) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise((res, rej) => {
+      img.onload = res;
+      img.onerror = rej;
+      img.src = `/assets/atlas_${i}.png`;
+    });
+    sheetImages.push(img);
+  }
+
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = TILE_SIZE;
+  tempCanvas.height = TILE_SIZE;
+  const tempCtx = tempCanvas.getContext('2d');
+  const tempData = tempCtx.createImageData(TILE_SIZE, TILE_SIZE);
+  const tempBuf = new Uint32Array(tempData.data.buffer);
+
+  for (const film of needsCompute) {
+    const ref = film.atlasRef;
+    const sheetIdx = ref.sheet;
+    const img = sheetImages[sheetIdx];
+    if (!img) continue;
+
+    // UV: [uMin, vMin, uMax, vMax] in 0-1 normalized
+    const uMin = ref.uv[0], vMin = ref.uv[1], uMax = ref.uv[2], vMax = ref.uv[3];
+    const px = Math.round(uMin * ATLAS_SIZE);
+    const py = Math.round(vMin * ATLAS_SIZE);
+    const pw = Math.round((uMax - uMin) * ATLAS_SIZE);
+    const ph = Math.round((vMax - vMin) * ATLAS_SIZE);
+
+    if (pw <= 0 || ph <= 0) continue;
+
+    // Draw the film's region from the atlas into temp canvas
+    tempCtx.drawImage(img, px, py, pw, ph, 0, 0, TILE_SIZE, TILE_SIZE);
+    const pixels = tempCtx.getImageData(0, 0, TILE_SIZE, TILE_SIZE).data;
+
+    // Average RGB
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const pr = pixels[i], pg = pixels[i+1], pb = pixels[i+2];
+      if (pr === 0 && pg === 0 && pb === 0) continue; // skip pitch-black borders
+      r += pr; g += pg; b += pb;
+      count++;
+    }
+    if (count === 0) continue;
+    r = r / count | 0;
+    g = g / count | 0;
+    b = b / count | 0;
+
+    // RGB → HSL
+    const R = r / 255, G = g / 255, B = b / 255;
+    const max = Math.max(R, G, B), min = Math.min(R, G, B);
+    const L = (max + min) / 2;
+    let H = 0, S = 0;
+
+    if (max !== min) {
+      const d = max - min;
+      S = L > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case R: H = ((G - B) / d + (G < B ? 6 : 0)) / 6; break;
+        case G: H = ((B - R) / d + 2) / 6; break;
+        case B: H = ((R - G) / d + 4) / 6; break;
+      }
+    }
+
+    // Sort key: low saturation (grey) → sort by luminance at end
+    // Articles (red→yellow) first, then greens, blues, purples, then black→white
+    let sortVal;
+    if (S < 0.1) {
+      // Grey/black/white — sort by luminance, 2.0 + normalized luminance
+      sortVal = 10 + L; // 10.0 to 11.0
+    } else if (L < 0.15) {
+      // Very dark colors — append after grey
+      sortVal = 11 + H;
+    } else if (L > 0.85) {
+      // Very light colors — append after dark
+      sortVal = 12 + H;
+    } else {
+      // Normal chromatic colors: 0-1 by hue
+      sortVal = H;
+    }
+
+    colorData[film.id] = {
+      hue: H,
+      saturation: S,
+      lightness: L,
+      sortVal,
+      hex: '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')
+    };
+  }
+
+  filmColorsCache = colorData;
+  return colorData;
+}
+
+export function getColorForFilm(filmId) {
+  return filmColorsCache?.[filmId] || null;
+}
+
 export async function loadFilms() {
   const resp = await fetch('/assets/films.json');
   films = await resp.json();
@@ -111,8 +231,8 @@ export function buildTapes(layout, scene) {
     if (group.length === 0 || !atlasTextures[sheetIdx]) continue;
 
     const sheetTex = atlasTextures[sheetIdx];
-    const shellMat = new THREE.MeshBasicMaterial({ color: 0x333333, side: THREE.DoubleSide });
-    const spineMat = new THREE.MeshBasicMaterial({ map: sheetTex, side: THREE.DoubleSide });
+    const shellMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.7, side: THREE.DoubleSide });
+    const spineMat = new THREE.MeshStandardMaterial({ map: sheetTex, roughness: 0.5, side: THREE.DoubleSide });
 
     for (let batch = 0; batch < Math.ceil(group.length / 500); batch++) {
       const slice = group.slice(batch * 500, (batch + 1) * 500);
