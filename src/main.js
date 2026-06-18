@@ -457,9 +457,9 @@ window.searchTrailers = async (autoPlay = false) => {
     const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
     if (apiKey) {
       try {
-        // Fetch candidates filtered to embeddable-only
+        // Fetch candidates — embeddable + syndicated (playable outside YT)
         const resp = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q.trim())}&type=video&videoEmbeddable=true&maxResults=10&key=${apiKey}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q.trim())}&type=video&videoEmbeddable=true&videoSyndicated=true&maxResults=10&key=${apiKey}`
         );
         const data = await resp.json();
         if (data.items && data.items.length > 0) {
@@ -470,9 +470,12 @@ window.searchTrailers = async (autoPlay = false) => {
           );
           const statusData = await statusResp.json();
           if (statusData.items && statusData.items.length > 0) {
-            // Find the first one that's actually embeddable
+            // Find the first one that's public, embeddable, and syndicated
             for (const item of statusData.items) {
-              if (item.status && item.status.embeddable) {
+              if (item.status
+                && item.status.embeddable
+                && item.status.privacyStatus === 'public'
+              ) {
                 showProjector(item.id);
                 return;
               }
