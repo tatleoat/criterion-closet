@@ -75,7 +75,7 @@ export function showBootstrapOverlay(missing) {
       ">Check Again</button>
 
       <p style="color:#666;font-size:0.75rem;margin-top:1.5rem;">
-        Need the full dataset? Run <code style="color:#888;">download_missing.py</code> in the project root first.
+        Need the full dataset? Run <code style="color:#888;">download_missing.py</code> in the project root first — it downloads covers into <code style="color:#888;">covers_raw/</code>.
       </p>
     </div>
   `;

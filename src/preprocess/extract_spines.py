@@ -14,7 +14,7 @@ except ImportError:
 import numpy as np
 
 ROOT = Path(__file__).parent.parent.parent
-COVERS_DIR = ROOT  # covers are in criterion-project/{film}/cover.jpg
+COVERS_DIR = ROOT / "covers_raw"  # covers are in covers_raw/{film}/cover.jpg
 METADATA_PATH = ROOT / "metadata.json"
 OUT_COVERS = Path(__file__).parent.parent / "public" / "assets" / "covers"
 OUT_SPINES = Path(__file__).parent.parent / "public" / "assets" / "spines"

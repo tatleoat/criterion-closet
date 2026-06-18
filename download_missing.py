@@ -4,7 +4,7 @@ import json, os, sys, time, requests
 from pathlib import Path
 
 JSON_PATH = os.path.join(os.path.dirname(__file__), "criterion_films.json")
-OUTPUT_DIR = os.path.dirname(__file__)
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "covers_raw")
 DELAY = 0.25
 TIMEOUT = 30
 
