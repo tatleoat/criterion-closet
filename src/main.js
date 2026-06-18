@@ -10,6 +10,7 @@ import { showFilm3D, closePanel3D, initPanel3D } from './panel3d.js';
 import { initPicks, addPick, isPicked, renderPicks, applyQualityToPicks } from './picks.js';
 import { computeFilmColors } from './tapes.js';
 import { placeMoviePosters, rebuildPosters } from './posters.js';
+import { ensureAssets } from './data_check.js';
 import './debug.js'; // P key toggles tuning panel
 
 // ─── Renderer ────────────────────────────────────────────
@@ -964,4 +965,10 @@ function animate() {
   }
 }
 
-init().then(() => animate());
+// ─── Bootstrap ──────────────────────────────────────────
+(async () => {
+  const ok = await ensureAssets();
+  if (ok) {
+    init().then(() => animate());
+  }
+})();
