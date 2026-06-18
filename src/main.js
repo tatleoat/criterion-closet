@@ -453,18 +453,37 @@ window.searchTrailers = async (autoPlay = false) => {
   const q = `${panel.dataset.title || ''} ${panel.dataset.year || ''} trailer`;
   console.log('🎬 Trailer search query:', q.trim());
   if (autoPlay) {
-    // Use YouTube Data API to find first result
+    // Use YouTube Data API to find first embeddable result
     const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
     if (apiKey) {
       try {
+        // Fetch candidates filtered to embeddable-only
         const resp = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q.trim())}&type=video&maxResults=1&key=${apiKey}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q.trim())}&type=video&videoEmbeddable=true&maxResults=10&key=${apiKey}`
         );
         const data = await resp.json();
         if (data.items && data.items.length > 0) {
-          const videoId = data.items[0].id.videoId;
-          showProjector(videoId);
-          return;
+          // Verify embeddable status via videos.list
+          const videoIds = data.items.map(item => item.id.videoId).join(',');
+          const statusResp = await fetch(
+            `https://www.googleapis.com/youtube/v3/videos?part=status&id=${videoIds}&key=${apiKey}`
+          );
+          const statusData = await statusResp.json();
+          if (statusData.items && statusData.items.length > 0) {
+            // Find the first one that's actually embeddable
+            for (const item of statusData.items) {
+              if (item.status && item.status.embeddable) {
+                showProjector(item.id);
+                return;
+              }
+            }
+            // All candidates returned as non-embeddable despite the search filter.
+            // Fall through to the browser tab fallback below.
+          } else {
+            // Status API returned nothing — just try the first search result
+            showProjector(data.items[0].id.videoId);
+            return;
+          }
         }
       } catch (e) {
         console.warn('YouTube API search failed:', e);
